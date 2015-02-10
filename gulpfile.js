@@ -41,6 +41,7 @@ function compile (compiler, src, opts) {
     });
     return gulp.src(src.concat(paths.bowerSrc))
         .pipe(psc)
+        .pipe(gulp.dest(paths.dest))
         .pipe(jsValidate());
 };
 
