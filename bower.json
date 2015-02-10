@@ -18,7 +18,7 @@
   ],
   "dependencies": {
     "purescript-argonaut": "git@github.com:purescript-contrib/purescript-argonaut.git#0.3.0",
-    "purescript-smolder": "~1.0.2"
+    "purescript-smolder": "~2.0.0"
   },
   "devDependencies": {},
   "resolutions": {

@@ -28,8 +28,8 @@ var paths = {
 
 var options = {
     test: {
-        main: 'Test.Main',
-        output: 'output/test.js'
+        main: 'Test',
+        output: 'test/test.js'
     }
 };
 
