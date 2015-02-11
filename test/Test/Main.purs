@@ -2,8 +2,6 @@ module Test where
 
 import Debug.Trace 
 import Data.Argonaut
--- import Data.Argonaut.Core  
-import qualified Data.Argonaut.Core as C
 import qualified Data.Argonaut.Encode as E
 import qualified Data.Argonaut.Decode as D
 import Data.Identity
@@ -18,20 +16,26 @@ data Foo = Foo
     }
 
 instance showFoo :: Show Foo where
-    show (Foo f) = "Foo(" ++ show f.foo ++ ", " ++ show f.bar ++ ")"
+  show (Foo f) = "Foo(" ++ show f.foo ++ ", " ++ show f.bar ++ ")"
 
 instance decodeFoo :: D.DecodeJson Foo where
-    decodeJson json = maybe (Left "not json for foo") Right $ do
-      obj <- C.toObject json
-      foo <- (M.lookup "foo" obj >>= C.toString)
-      bar <- (M.lookup "bar" obj >>= C.toNumber)
-      pure (Foo {foo: foo, bar: bar})
+  decodeJson json = maybe (Left "not json for foo") Right $ do
+    obj <- toObject json
+    foo <- (M.lookup "foo" obj >>= toString)
+    bar <- (M.lookup "bar" obj >>= toNumber)
+    pure (Foo {foo: foo, bar: bar})
 
 instance encodeFoo :: E.EncodeJson Foo where
-  encodeJson (Foo {foo = f, bar = b}) =  fromObject $ M.fromList [Tuple "foo" $ C.fromString f, Tuple "bar" $ C.fromNumber b]
+  encodeJson (Foo {foo = f, bar = b}) =  
+    fromObject $ 
+      M.fromList [Tuple "foo" $ fromString f, 
+                  Tuple "bar" $ fromNumber b]
 
 --    encodeJson :: a -> Json
-main = do 
+main = do
+  let mahfoo = Foo { foo: "meh", bar: 23 }
+  trace $ "show mahfoo: " ++ show mahfoo
+  trace $ "encode mahfoo: " ++ show (encodeJson mahfoo)
   trace $ bah
 
 bah :: String
