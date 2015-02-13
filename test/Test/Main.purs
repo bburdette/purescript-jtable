@@ -31,12 +31,17 @@ instance encodeFoo :: E.EncodeJson Foo where
       M.fromList [Tuple "foo" $ fromString f, 
                   Tuple "bar" $ fromNumber b]
 
---    encodeJson :: a -> Json
 main = do
   let mahfoo = Foo { foo: "meh", bar: 23 }
   trace $ "show mahfoo: " ++ show mahfoo
   trace $ "encode mahfoo: " ++ show (encodeJson mahfoo)
-  trace $ bah
+  trace $ "bah mahfoo: " ++ show bah 
+  let ebahson = jsonParser bah
+      mbobject = toObject <$> ebahson
+      mbfoobject = toObject (encodeJson mahfoo)
+  trace $ "mbobject: " ++ show mbobject
+  trace "------------------------------"
+  trace $ "mbfoobobject: " ++ show mbfoobject
 
 bah :: String
 bah = """
@@ -59,4 +64,5 @@ bah = """
   }]
 }
 """
+
 
