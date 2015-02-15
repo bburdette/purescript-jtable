@@ -2,6 +2,7 @@ module Test where
 
 import Debug.Trace 
 import Data.Argonaut
+import qualified Data.Argonaut.Core as C
 import qualified Data.Argonaut.Encode as E
 import qualified Data.Argonaut.Decode as D
 import Data.Identity
@@ -9,39 +10,42 @@ import Data.Either
 import Data.Maybe
 import qualified Data.StrMap as M
 import Data.Tuple
-
-data Foo = Foo
-    { foo :: String
-    , bar :: Number
-    }
-
-instance showFoo :: Show Foo where
-  show (Foo f) = "Foo(" ++ show f.foo ++ ", " ++ show f.bar ++ ")"
-
-instance decodeFoo :: D.DecodeJson Foo where
-  decodeJson json = maybe (Left "not json for foo") Right $ do
-    obj <- toObject json
-    foo <- (M.lookup "foo" obj >>= toString)
-    bar <- (M.lookup "bar" obj >>= toNumber)
-    pure (Foo {foo: foo, bar: bar})
-
-instance encodeFoo :: E.EncodeJson Foo where
-  encodeJson (Foo {foo = f, bar = b}) =  
-    fromObject $ 
-      M.fromList [Tuple "foo" $ fromString f, 
-                  Tuple "bar" $ fromNumber b]
+import Data.Array
+import qualified Data.Argonaut.JSemantic as Jc
 
 main = do
-  let mahfoo = Foo { foo: "meh", bar: 23 }
-  trace $ "show mahfoo: " ++ show mahfoo
-  trace $ "encode mahfoo: " ++ show (encodeJson mahfoo)
-  trace $ "bah mahfoo: " ++ show bah 
   let ebahson = jsonParser bah
-      mbobject = toObject <$> ebahson
-      mbfoobject = toObject (encodeJson mahfoo)
-  trace $ "mbobject: " ++ show mbobject
-  trace "------------------------------"
-  trace $ "mbfoobobject: " ++ show mbfoobject
+      eheads = calcheadings <$> ebahson
+  trace $ "heads: " ++ show eheads
+
+  -- eobject = toObject <$> ebahson
+  -- trace $ "eobject: " ++ show eobject
+  -- trace "---------------------------------------" 
+
+calcheadings :: C.Json -> [[String]]
+calcheadings js = 
+  calcJsonHeads [] js
+
+calcJsonHeads :: [String] -> C.Json -> [[String]]
+calcJsonHeads path json = 
+  let cp = (const [path]) in 
+  C.foldJson (const [path]) (const [path]) (const [path]) (const [path]) (calcJAheadings path) (calcJOheadings path) json
+
+calcJOheadings :: [String] -> C.JObject -> [[String]]
+calcJOheadings path jo =  
+  M.fold meh [] jo
+  where
+    meh z str json = 
+      let moopath :: [String]
+          moopath = path ++ [str]
+        in 
+          z ++ calcJsonHeads moopath json 
+
+calcJAheadings :: [String] -> C.JArray -> [[String]]
+calcJAheadings path ja =  
+  concat (map (calcJsonHeads path) ja)
+
+
 
 bah :: String
 bah = """

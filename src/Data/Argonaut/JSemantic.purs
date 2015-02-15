@@ -1,4 +1,4 @@
-module JSemantic where
+module Data.Argonaut.JSemantic where
 
 -- Data.Argonaut.JSemantic
 
