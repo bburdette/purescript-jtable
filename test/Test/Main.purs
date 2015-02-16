@@ -29,10 +29,10 @@ calcheadings js =
 calcJsonHeads :: [String] -> C.Json -> [[String]]
 calcJsonHeads path json = 
   let cp = (const [path]) in 
-  C.foldJson (const [path]) (const [path]) (const [path]) (const [path]) (calcJAheadings path) (calcJOheadings path) json
+  C.foldJson (const [path]) (const [path]) (const [path]) (const [path]) (calcJAHeadings path) (calcJOHeadings path) json
 
-calcJOheadings :: [String] -> C.JObject -> [[String]]
-calcJOheadings path jo =  
+calcJOHeadings :: [String] -> C.JObject -> [[String]]
+calcJOHeadings path jo =  
   M.fold meh [] jo
   where
     meh z str json = 
@@ -41,10 +41,9 @@ calcJOheadings path jo =
         in 
           z ++ calcJsonHeads moopath json 
 
-calcJAheadings :: [String] -> C.JArray -> [[String]]
-calcJAheadings path ja =  
+calcJAHeadings :: [String] -> C.JArray -> [[String]]
+calcJAHeadings path ja =  
   concat (map (calcJsonHeads path) ja)
-
 
 
 bah :: String
