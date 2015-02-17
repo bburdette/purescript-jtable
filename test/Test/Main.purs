@@ -12,11 +12,28 @@ import qualified Data.StrMap as M
 import Data.Tuple
 import Data.Array
 import qualified Data.Argonaut.JSemantic as Jc
+import Data.Argonaut.JCursor
 
-main = do
-  let ebahson = jsonParser bah
-      eheads = calcheadings <$> ebahson
-  trace $ "heads: " ++ show eheads
+
+main :: forall eff. Control.Monad.Eff.Eff (trace :: Debug.Trace.Trace | eff) Prelude.Unit
+main = 
+  case (jsonParser bah) of 
+    Right json -> do
+      let eheads = calcheadings json
+      trace $ "heads: " ++ show eheads
+      let jcsrs = headsToJcs eheads
+      trace $ "jcursors: " ++ show jcsrs
+    Left err -> do 
+      trace "error" 
+
+headsToJcs :: [[String]] -> [JCursor]
+headsToJcs heads = 
+  headsToJc <$> heads
+
+headsToJc :: [String] -> JCursor
+headsToJc [] = JCursorTop
+headsToJc (str:strs) = 
+  JField str (headsToJc strs)
 
   -- eobject = toObject <$> ebahson
   -- trace $ "eobject: " ++ show eobject
