@@ -13,7 +13,7 @@ import Data.Tuple
 import Data.Array
 import qualified Data.Argonaut.JSemantic as Jc
 import Data.Argonaut.JCursor
-
+import Data.Argonaut.JSemantic
 
 main :: forall eff. Control.Monad.Eff.Eff (trace :: Debug.Trace.Trace | eff) Prelude.Unit
 main = 
@@ -23,6 +23,8 @@ main =
       trace $ "heads: " ++ show eheads
       let jcsrs = headsToJcs eheads
       trace $ "jcursors: " ++ show jcsrs
+      let blah = flattjs json
+      trace $ show blah
     Left err -> do 
       trace "error" 
 
@@ -38,6 +40,70 @@ headsToJc (str:strs) =
   -- eobject = toObject <$> ebahson
   -- trace $ "eobject: " ++ show eobject
   -- trace "---------------------------------------" 
+
+data JSVal = Jsn Number | Jsb Boolean | Jss String
+
+instance showJSVal :: Show JSVal where
+  show (Jsn a) = show a
+  show (Jsb a) = show a
+  show (Jss a) = show a
+
+
+data JSValStuff = JSValStuff {
+  val :: JSVal,
+  smantic :: JSemantic
+  }
+
+instance showJSValStuff :: Show JSValStuff where
+  show (JSValStuff { val: v, smantic: s }) = "{ " ++ show v ++ ", " ++ show s ++ "}"
+
+jsvnull :: C.JNull -> Maybe JSValStuff
+jsvnull _ = Nothing 
+
+jsvboolean :: C.JBoolean -> Maybe JSValStuff
+jsvboolean b = Just $ JSValStuff { val: Jsb b, smantic: Bool }
+
+jsvnumber :: C.JNumber -> Maybe JSValStuff
+jsvnumber n = Just $ JSValStuff { val: Jsn n, smantic: Integral }
+
+jsvstring :: C.JString -> Maybe JSValStuff
+jsvstring s = Just $ JSValStuff { val: Jss s, smantic: Text }
+
+makejsv :: forall a. [String] -> (a -> Maybe JSValStuff) -> 
+                    a -> [(Tuple JCursor (Maybe JSValStuff))]
+makejsv path converter thing = 
+  [(Tuple (headsToJc path) (converter thing))] 
+  
+
+flattjs :: C.Json -> [(Tuple JCursor (Maybe JSValStuff))]
+flattjs js = 
+  flattJson [] js
+
+flattJson :: [String] -> C.Json -> [(Tuple JCursor (Maybe JSValStuff))]
+flattJson path json = 
+  C.foldJson (makejsv path jsvnull)
+             (makejsv path jsvboolean)
+             (makejsv path jsvnumber)
+             (makejsv path jsvstring)
+             (flattJA path) 
+             (flattJO path) 
+             json
+
+flattJO :: [String] -> C.JObject -> [(Tuple JCursor (Maybe JSValStuff))]
+flattJO path jo =  
+  M.fold meh [] jo
+  where
+    meh z str json = 
+      let moopath :: [String]
+          moopath = path ++ [str]
+        in 
+          z ++ flattJson moopath json 
+
+flattJA :: [String] -> C.JArray -> [(Tuple JCursor (Maybe JSValStuff))]
+flattJA path ja =  
+  concat (map (flattJson path) ja)
+
+----------------------------
 
 calcheadings :: C.Json -> [[String]]
 calcheadings js = 
