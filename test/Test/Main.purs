@@ -8,12 +8,14 @@ import qualified Data.Argonaut.Decode as D
 import Data.Identity
 import Data.Either
 import Data.Maybe
-import qualified Data.StrMap as M
+import qualified Data.StrMap as SM
 import Data.Tuple
 import Data.Array
+import Data.Foldable
 import qualified Data.Argonaut.JSemantic as Jc
 import Data.Argonaut.JCursor
 import Data.Argonaut.JSemantic
+import qualified Data.Map as M
 
 main :: forall eff. Control.Monad.Eff.Eff (trace :: Debug.Trace.Trace | eff) Prelude.Unit
 main = 
@@ -25,6 +27,8 @@ main =
       trace $ "jcursors: " ++ show jcsrs
       let blah = flattjs json
       trace $ show blah
+      let stacked = stackVals blah
+      trace $ show stacked
     Left err -> do 
       trace "error" 
 
@@ -91,7 +95,7 @@ flattJson path json =
 
 flattJO :: [String] -> C.JObject -> [(Tuple JCursor (Maybe JSValStuff))]
 flattJO path jo =  
-  M.fold meh [] jo
+  SM.fold meh [] jo
   where
     meh z str json = 
       let moopath :: [String]
@@ -102,6 +106,23 @@ flattJO path jo =
 flattJA :: [String] -> C.JArray -> [(Tuple JCursor (Maybe JSValStuff))]
 flattJA path ja =  
   concat (map (flattJson path) ja)
+
+stackVals :: [(Tuple JCursor (Maybe JSValStuff))] -> M.Map JCursor [(Maybe JSValStuff)]
+stackVals tupes = 
+  foldr doitt M.empty tupes
+  where doitt :: (Tuple JCursor (Maybe JSValStuff)) 
+               -> M.Map JCursor [(Maybe JSValStuff)] 
+               -> M.Map JCursor [(Maybe JSValStuff)] 
+        doitt (Tuple jcsr jsvs) map = 
+          let val = M.lookup jcsr map 
+            in case val of 
+              Nothing -> M.insert jcsr [jsvs] map
+              Just val -> M.insert jcsr (val ++ [jsvs]) map
+ 
+
+
+
+
 
 ----------------------------
 
@@ -116,7 +137,7 @@ calcJsonHeads path json =
 
 calcJOHeadings :: [String] -> C.JObject -> [[String]]
 calcJOHeadings path jo =  
-  M.fold meh [] jo
+  SM.fold meh [] jo
   where
     meh z str json = 
       let moopath :: [String]
