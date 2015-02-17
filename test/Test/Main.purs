@@ -10,12 +10,19 @@ import Data.Either
 import Data.Maybe
 import qualified Data.StrMap as SM
 import Data.Tuple
-import Data.Array
+import qualified Data.Array as A
 import Data.Foldable
 import qualified Data.Argonaut.JSemantic as Jc
 import Data.Argonaut.JCursor
 import Data.Argonaut.JSemantic
 import qualified Data.Map as M
+
+import Text.Smolder.HTML (html, head, meta, link, title, body, h1, p)
+import Text.Smolder.HTML.Attributes (lang, charset, httpEquiv, content, name, rel, href)
+import Text.Smolder.Markup (text, (!))
+import Text.Smolder.Renderer.String (render)
+
+----------------------------------------------
 
 main :: forall eff. Control.Monad.Eff.Eff (trace :: Debug.Trace.Trace | eff) Prelude.Unit
 main = 
@@ -29,8 +36,23 @@ main =
       trace $ show blah
       let stacked = stackVals blah
       trace $ show stacked
+      let mahdoc = makeTestDoc
+      trace $ show mahdoc
     Left err -> do 
       trace "error" 
+
+makeTestDoc = html ! lang "en" $ do 
+  head $ do
+    meta ! charset "utf-8"
+    meta ! httpEquiv "X-UA-Compatible" ! content "IE=edge,chrome=1"
+    title $ text "OMG HAI LOL"
+    meta ! name "description" ! content "YES OMG HAI LOL"
+    meta ! name "viewport" ! content "width=device-width"
+    link ! rel "stylesheet" ! href "css/screen.css"
+  body $ do
+    h1 $ text "OMG HAI LOL"
+    p $ text "This is clearly the best HTML DSL ever invented."
+
 
 headsToJcs :: [[String]] -> [JCursor]
 headsToJcs heads = 
@@ -105,7 +127,7 @@ flattJO path jo =
 
 flattJA :: [String] -> C.JArray -> [(Tuple JCursor (Maybe JSValStuff))]
 flattJA path ja =  
-  concat (map (flattJson path) ja)
+  A.concat (A.map (flattJson path) ja)
 
 stackVals :: [(Tuple JCursor (Maybe JSValStuff))] -> M.Map JCursor [(Maybe JSValStuff)]
 stackVals tupes = 
@@ -147,7 +169,7 @@ calcJOHeadings path jo =
 
 calcJAHeadings :: [String] -> C.JArray -> [[String]]
 calcJAHeadings path ja =  
-  concat (map (calcJsonHeads path) ja)
+  A.concat (A.map (calcJsonHeads path) ja)
 
 
 bah :: String
