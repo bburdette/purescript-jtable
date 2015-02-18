@@ -16,10 +16,11 @@ import qualified Data.Argonaut.JSemantic as Jc
 import Data.Argonaut.JCursor
 import Data.Argonaut.JSemantic
 import qualified Data.Map as M
+import Control.Monad
 
-import Text.Smolder.HTML (html, head, meta, link, title, body, h1, p)
+import Text.Smolder.HTML (html, head, meta, link, title, body, h1, p, table, td, th, tr)
 import Text.Smolder.HTML.Attributes (lang, charset, httpEquiv, content, name, rel, href)
-import Text.Smolder.Markup (text, (!))
+import Text.Smolder.Markup (text, (!), Markup(..))
 import Text.Smolder.Renderer.String (render)
 
 ----------------------------------------------
@@ -52,6 +53,19 @@ makeTestDoc = html ! lang "en" $ do
   body $ do
     h1 $ text "OMG HAI LOL"
     p $ text "This is clearly the best HTML DSL ever invented."
+    makeTable ["a", "b", "c"]
+
+makeTable :: [String] -> Markup
+makeTable strings = do
+  table $ do 
+    tr $ th $ text "meh" 
+    makeEntries strings
+
+makeEntries :: [String] -> Markup
+makeEntries [] = return unit 
+makeEntries (s:ss) = do
+  tr $ td $ text s
+  makeEntries ss
 
 
 headsToJcs :: [[String]] -> [JCursor]
