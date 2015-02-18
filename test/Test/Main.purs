@@ -16,6 +16,7 @@ import qualified Data.Argonaut.JSemantic as Jc
 import Data.Argonaut.JCursor
 import Data.Argonaut.JSemantic
 import qualified Data.Map as M
+import qualified Data.Set as S
 import Control.Monad
 
 import Text.Smolder.HTML (html, head, meta, link, title, body, h1, p, table, td, th, tr)
@@ -39,6 +40,8 @@ main =
       trace $ show stacked
       let mahdoc = makeTestDoc
       trace $ show mahdoc
+      let jcsrlist = makeJcsrList blah
+      trace $ show ((\jc -> (Tuple jc (jcdepth jc))) <$> jcsrlist)
     Left err -> do 
       trace "error" 
 
@@ -67,7 +70,6 @@ makeEntries (s:ss) = do
   tr $ td $ text s
   makeEntries ss
 
-
 headsToJcs :: [[String]] -> [JCursor]
 headsToJcs heads = 
   headsToJc <$> heads
@@ -77,9 +79,7 @@ headsToJc [] = JCursorTop
 headsToJc (str:strs) = 
   JField str (headsToJc strs)
 
-  -- eobject = toObject <$> ebahson
-  -- trace $ "eobject: " ++ show eobject
-  -- trace "---------------------------------------" 
+-- trace "---------------------------------------" 
 
 data JSVal = Jsn Number | Jsb Boolean | Jss String
 
@@ -87,7 +87,6 @@ instance showJSVal :: Show JSVal where
   show (Jsn a) = show a
   show (Jsb a) = show a
   show (Jss a) = show a
-
 
 data JSValStuff = JSValStuff {
   val :: JSVal,
@@ -113,7 +112,6 @@ makejsv :: forall a. [String] -> (a -> Maybe JSValStuff) ->
                     a -> [(Tuple JCursor (Maybe JSValStuff))]
 makejsv path converter thing = 
   [(Tuple (headsToJc path) (converter thing))] 
-  
 
 flattjs :: C.Json -> [(Tuple JCursor (Maybe JSValStuff))]
 flattjs js = 
@@ -155,10 +153,20 @@ stackVals tupes =
               Nothing -> M.insert jcsr [jsvs] map
               Just val -> M.insert jcsr (val ++ [jsvs]) map
  
+-- make list of JCursors in order of appearance, without duplicates.  
+makeJcsrList :: [(Tuple JCursor (Maybe JSValStuff))] -> [JCursor] 
+makeJcsrList tupelist = makeJcsrList' tupelist S.empty
 
-
-
-
+makeJcsrList' :: [(Tuple JCursor (Maybe JSValStuff))] -> S.Set JCursor -> [JCursor] 
+makeJcsrList' [] _ = []
+makeJcsrList' ((Tuple jcsr _):ts) jcset = 
+  if S.member jcsr jcset 
+    then (makeJcsrList' ts jcset)
+    else (jcsr : (makeJcsrList' ts (S.insert jcsr jcset)))
+ 
+jcdepth :: JCursor -> Number
+jcdepth JCursorTop = 0
+jcdepth (JField _ jcsr) = 1 + (jcdepth jcsr)
 
 ----------------------------
 
